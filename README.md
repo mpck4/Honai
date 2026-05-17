@@ -49,67 +49,60 @@ which side writes which fields.
 
 | Path           | Owner   | Purpose                                                  |
 | -------------- | ------- | -------------------------------------------------------- |
-| `honeypot/`    | Charlie | Cowrie `docker-compose.yml` + runtime data (gitignored)  |
+| `honeypot/`    | Charlie | Cowrie runtime data (gitignored)                         |
 | `ingest/`      | Charlie | Python tailer that turns `cowrie.json` into DB rows      |
-| `db/`          | Charlie | Schema (`init.sql`) — applied automatically by tailer    |
-| `agents/`      | Garv    | AI triage, Telegram alerts, periodic digest             |
+| `db/`          | Charlie | Schema (`init.sql`) — applied on container startup       |
+| `agents/`      | Garv    | AI triage, Telegram alerts, periodic digest              |
 | `docs/`        | shared  | `SCHEMA.md` — DB contract between halves                 |
+| `docker-compose.yml` | — | Three-service stack (cowrie + ingest + triage)         |
 
 ## Running it locally
+
+The whole stack is one `docker compose up`. Drop your keys into `agents/.env`,
+bring it up, attack `ssh root@localhost` from any terminal, and Telegram fires.
 
 ### Prerequisites
 
 - **Docker Desktop** (running)
-- **Python 3.10+**
 - **Groq API key** — free tier at https://console.groq.com
 - **Telegram bot** — create via [@BotFather](https://t.me/BotFather); get your
   chat ID by messaging [@userinfobot](https://t.me/userinfobot)
 
-### One-time setup
+That's it. No local Python needed.
+
+### Setup (one-time)
 
 ```bash
-git clone <this repo>
-cd Honai
+git clone https://github.com/mpck4/HonAI.git
+cd HonAI
 
-# Agent deps
-pip install -r agents/requirements.txt
-
-# Fill in credentials
-cp agents/.env.example agents/.env
-# Edit agents/.env:
-#   DB_PATH=../sessions.db          (local-dev value; agents run from agents/)
-#   GROQ_API_KEY=gsk_...
-#   TELEGRAM_TOKEN=...
-#   TELEGRAM_CHAT_ID=...
+# Bash:        cp agents/.env.example agents/.env
+# PowerShell:  Copy-Item agents/.env.example agents/.env
 ```
 
-### Run it (three terminals)
+Edit `agents/.env` and fill in `GROQ_API_KEY`, `TELEGRAM_TOKEN`, and
+`TELEGRAM_CHAT_ID`. Leave `DB_PATH` alone — the container default is correct.
 
-**Terminal 1 — honeypot:**
+### Run it
 
 ```bash
-cd honeypot
-mkdir -p var/log/cowrie var/lib/cowrie/downloads var/lib/cowrie/tty
-docker compose up -d
-docker compose logs -f cowrie    # optional: watch attacks land
+docker compose up        # foreground; Ctrl+C to stop
+# or:
+docker compose up -d     # detached; see logs with `docker compose logs -f`
 ```
 
-**Terminal 2 — tailer (follow mode):**
+First boot builds the two Python images (~30s). After that, everything starts
+in a few seconds. Per-service logs:
 
 ```bash
-python -m ingest.tail --cowrie-log honeypot/var/log/cowrie/cowrie.json
-```
-
-**Terminal 3 — triage agent:**
-
-```bash
-cd agents
-python triage.py
+docker compose logs -f cowrie     # watch attackers land
+docker compose logs -f ingest     # tailer activity
+docker compose logs -f triage     # LLM verdicts
 ```
 
 ### Verify end-to-end
 
-From a fourth terminal:
+From any terminal:
 
 ```bash
 ssh root@localhost     # password: anything (Cowrie accepts random passwords)
@@ -118,7 +111,7 @@ ssh root@localhost     # password: anything (Cowrie accepts random passwords)
 > exit
 ```
 
-Within ~10 seconds you should see in Terminal 3:
+Within ~10 seconds you should see in `docker compose logs -f triage`:
 
 ```
 [triage] session N (172.18.0.1) → critical
@@ -128,21 +121,25 @@ Within ~10 seconds you should see in Terminal 3:
 
 ### Periodic digest (optional)
 
+The digest is a one-shot script — exec it inside the running triage container
+whenever you want a fresh summary pushed to Telegram:
+
 ```bash
-cd agents
-python digest.py
+docker compose exec triage python digest.py
 ```
 
-One-shot: reads triaged sessions since the last digest, asks Groq for a 3-paragraph
-summary, writes a row to `digests`, pushes to Telegram. Re-run on a cadence
-(cron / Task Scheduler / a simple loop) for live demo digests.
+Re-run on a cadence (cron / Task Scheduler) for live demo digests.
 
 ### Tear down
 
 ```bash
-# Ctrl+C the Python processes
-cd honeypot && docker compose down
+docker compose down
 ```
+
+Each `docker compose up` is a fresh run: an `archive` service moves the previous
+cowrie.json into `./archive/<UTC-timestamp>/` and wipes `./data/sessions.db`
+before the rest of the stack starts. Past sessions are kept for forensics; live
+state is never stale.
 
 ## Going public
 
@@ -152,8 +149,9 @@ public internet. Options:
 - **Router port-forward**: forward external TCP 22 → your laptop's LAN IP. Real
   IP, real scanners. Requires admin access to your router; some ISPs block 22.
 - **VPS** (Hetzner, DigitalOcean, etc.): cleaner separation, always-on. Move
-  the real sshd off 22 first — see comments at the top of
-  [honeypot/docker-compose.yml](honeypot/docker-compose.yml) for the checklist.
+  the real sshd off port 22 first (`Port 2222` in `/etc/ssh/sshd_config`,
+  `systemctl restart ssh`, reconnect on the new port to confirm), then open
+  both 22 and 2222 in the firewall.
 - **ngrok TCP**: `ngrok tcp 22` exposes the laptop publicly without router
   config. Works for judges; won't get organic scanner traffic since attackers
   don't browse ngrok domains.
@@ -163,6 +161,9 @@ public internet. Options:
 A sample log lives at [ingest/fixtures/sample_cowrie.json](ingest/fixtures/sample_cowrie.json).
 Three sessions: a credential-stuffer, a malware downloader, and a duplicate of
 the downloader from a different IP (exercises payload-hash dedup).
+
+Run the tailer against the fixture (needs local Python 3.10+, no Docker, no
+keys):
 
 ```bash
 python -m ingest.tail --cowrie-log ingest/fixtures/sample_cowrie.json --once

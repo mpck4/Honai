@@ -1,0 +1,96 @@
+# Honai — one-command stack.
+#
+#   1. Copy agents/.env.example -> agents/.env, fill in keys
+#   2. docker compose up
+#
+# Three services:
+#   cowrie  — SSH honeypot on host port 22
+#   ingest  — tails cowrie.json, writes sessions.db
+#   triage  — LLM verdict + Telegram alerts
+#
+# Shared state:
+#   ./honeypot/var  — Cowrie's runtime dir (logs, downloads). Gitignored.
+#   ./data          — sessions.db + tail state. Gitignored.
+
+services:
+  # Runs once on every `docker compose up`, before the rest of the stack.
+  # Archives the previous run's cowrie.json into ./archive/<UTC-timestamp>/
+  # and wipes ./data so every boot starts with a fresh DB.
+  archive:
+    image: alpine:3.19
+    container_name: honai-archive
+    volumes:
+      - ./data:/data
+      - ./honeypot/var/log/cowrie:/cowrie-log
+      - ./archive:/archive
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        TS=$$(date -u +%Y%m%dT%H%M%SZ)
+        if ls /cowrie-log/cowrie.json* >/dev/null 2>&1; then
+          mkdir -p "/archive/$$TS"
+          mv /cowrie-log/cowrie.json* "/archive/$$TS/" 2>/dev/null || true
+          echo "[archive] saved previous logs to ./archive/$$TS/"
+        else
+          echo "[archive] no previous logs to archive"
+        fi
+        rm -f /data/sessions.db /data/sessions.db-wal /data/sessions.db-shm /data/sessions.db-journal /data/.tail.state /data/.tail.state.tmp
+        echo "[archive] cleared ./data — starting fresh"
+
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: honai-cowrie
+    restart: unless-stopped
+    depends_on:
+      archive:
+        condition: service_completed_successfully
+    ports:
+      - "22:2222"
+    volumes:
+      - ./honeypot/var:/cowrie/cowrie-git/var
+    environment:
+      - COWRIE_TELNET_ENABLED=no
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  ingest:
+    build:
+      context: .
+      dockerfile: ingest/Dockerfile
+    container_name: honai-ingest
+    restart: unless-stopped
+    depends_on:
+      archive:
+        condition: service_completed_successfully
+      cowrie:
+        condition: service_started
+    volumes:
+      - ./honeypot/var/log/cowrie:/cowrie-log:ro
+      - ./data:/data
+
+  triage:
+    build:
+      context: .
+      dockerfile: agents/Dockerfile
+    container_name: honai-triage
+    restart: unless-stopped
+    depends_on:
+      archive:
+        condition: service_completed_successfully
+      ingest:
+        condition: service_started
+    env_file:
+      - ./agents/.env
+    # Explicit override so a stale DB_PATH in the user's .env can't break the
+    # container layout. The .env file is only meant to provide API credentials.
+    environment:
+      - DB_PATH=/data/sessions.db
+    volumes:
+      - ./data:/data
