@@ -1,3 +1,28 @@
+# Secrets
 .env
 .env.*
 !.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# SQLite (runtime data — contains real attacker IPs and credentials)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Tail state and local runtime dirs
+var/
+*.tail.state*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
