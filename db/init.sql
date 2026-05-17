@@ -86,15 +86,15 @@ CREATE TABLE IF NOT EXISTS alerts (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id  INTEGER REFERENCES sessions (id) ON DELETE SET NULL,
     digest_id   INTEGER REFERENCES digests  (id) ON DELETE SET NULL,
-    kind        TEXT    NOT NULL CHECK (kind IN ('critical_session', 'digest')),
+    kind        TEXT    NOT NULL CHECK (kind IN ('critical_session', 'suspicious_session', 'digest')),
     channel     TEXT    NOT NULL CHECK (channel IN ('telegram', 'email')),
     status      TEXT    NOT NULL DEFAULT 'sent' CHECK (status IN ('sent', 'failed')),
     error       TEXT,
     sent_at     TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (
-        (kind = 'critical_session' AND session_id IS NOT NULL AND digest_id IS NULL)
+        (kind IN ('critical_session', 'suspicious_session') AND session_id IS NOT NULL AND digest_id IS NULL)
         OR
-        (kind = 'digest'           AND digest_id  IS NOT NULL AND session_id IS NULL)
+        (kind = 'digest'                                    AND digest_id  IS NOT NULL AND session_id IS NULL)
     )
 );
 

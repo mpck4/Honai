@@ -79,7 +79,7 @@ the same critical session if it restarts.
 | `id`          | INTEGER | no   | autoincrement       | Primary key                                            |
 | `session_id`  | INTEGER | yes  | NULL                | FK → `sessions.id` (NULL for digest alerts)            |
 | `digest_id`   | INTEGER | yes  | NULL                | FK → `digests.id` (NULL for session alerts)            |
-| `kind`        | TEXT    | no   | —                   | `critical_session` \| `digest`                         |
+| `kind`        | TEXT    | no   | —                   | `critical_session` \| `suspicious_session` \| `digest`  |
 | `channel`     | TEXT    | no   | —                   | `telegram` \| `email`                                  |
 | `status`      | TEXT    | no   | `'sent'`            | `sent` \| `failed`                                     |
 | `error`       | TEXT    | yes  | NULL                | Error message if `status='failed'`                     |
