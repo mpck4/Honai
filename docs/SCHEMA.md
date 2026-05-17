@@ -113,6 +113,29 @@ notify layer never sees a half-triaged row.
   attempt, lateral-movement probe, or anything novel. Triggers the urgent
   notification path.
 
+### Criticality invariant (READ THIS)
+
+`verdict='critical'` is the **only** signal the notify layer uses to wake a
+human up. There is no second channel, no override flag, no out-of-band ping.
+
+This means:
+
+- **If a session needs to be told to a person, the agent MUST set
+  `verdict='critical'`.** No other field triggers a page.
+- **Conversely, if the agent sets `verdict='critical'`, a human WILL be paged**
+  (Telegram + email) within ~1 minute of `status` flipping to `triaged`. Don't
+  use this verdict for "kind of interesting" — that's what `suspicious` is for.
+- The agent should also append `"critical"` to the `tags` JSON array so the
+  reason is visible in the row itself and in digests without joining to
+  `verdict`. Notify doesn't read `tags` — that's belt-and-suspenders for
+  humans reading the DB and for digest rendering.
+- Critical sessions are still included in the next digest. The urgent page is
+  not a substitute for the digest entry — it's in addition to it.
+
+If the contract for "what counts as critical" needs to change, change the
+bullet list under **Verdict values** above and announce in the team chat —
+don't introduce a new flag.
+
 ### Deduplication
 
 When `ingest/tail.py` is about to insert a row, it computes `payload_hash` over
@@ -151,6 +174,9 @@ All timestamps are ISO-8601 UTC strings (`YYYY-MM-DDTHH:MM:SSZ`). Use SQLite's
 - Polls `SELECT * FROM sessions WHERE status='new' ORDER BY id`.
 - For each: sets `verdict`, `verdict_reason`, `tags`, `triaged_at`, and
   `status='triaged'` in a single transaction.
+- **If a session warrants paging a human, MUST set `verdict='critical'`** (and
+  add `"critical"` to `tags`). This is the only signal notify reads. See
+  the criticality invariant above.
 - Writes periodic digests into `digests`.
 
 **Notify → DB**
