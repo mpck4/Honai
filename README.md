@@ -1,4 +1,4 @@
-# Honai
+# HonAI
 
 AI honeypot with agentic SOC analysis. A Cowrie SSH honeypot captures real
 attacker sessions from the open internet, an AI agent triages each session and
