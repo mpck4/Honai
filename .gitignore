@@ -17,6 +17,8 @@ venv/
 
 # Tail state and local runtime dirs
 var/
+data/
+archive/
 *.tail.state*
 
 # OS / editor
