@@ -39,7 +39,7 @@ Built in 24 hours for a hackathon.
      │ SELECT verdict='critical' + latest digest
      ▼
 ┌──────────────────┐
-│   notify/        │   Telegram + email
+│   notify/        │   Telegram
 └──────────────────┘
 ```
 
@@ -50,27 +50,12 @@ Built in 24 hours for a hackathon.
 | `honeypot/`    | Charlie | Cowrie `docker-compose.yml` + config                     |
 | `ingest/`      | Charlie | Python tailer that turns `cowrie.json` into DB rows      |
 | `db/`          | Charlie | Schema (`init.sql`) and any migration helpers            |
-| `notify/`      | Charlie | Urgent alerts + periodic digest push (Telegram, email)   |
+| `notify/`      | Garv    | Urgent alerts + periodic digest push (Telegram, email)   |
 | `agents/`      | Garv    | AI triage agents and digest generation                   |
 | `docs/`        | shared  | `SCHEMA.md` — DB contract between halves                 |
 
 The two halves communicate only through `sessions.db`. See [docs/SCHEMA.md](docs/SCHEMA.md)
 for table definitions, status lifecycle, and which side writes which fields.
-
-## Demo plan
-
-- Real SSH attacks from the open internet land in `sessions`.
-- The agent layer triages each one and occasionally flags one as `critical`.
-- Judges see Telegram alerts fire live during the demo, plus a digest that
-  runs on a 30-minute cadence during the demo window.
-
-## Working agreement
-
-- Small commits, one logical step per commit.
-- Don't modify code outside your half. Schema changes go through
-  [docs/SCHEMA.md](docs/SCHEMA.md) and need both teammates to agree.
-- VPS-level changes (firewall, ports, systemd) get explicitly called out before
-  running.
 
 ## License
 
