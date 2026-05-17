@@ -57,6 +57,10 @@ which side writes which fields.
 
 ## Running it locally
 
+Honai runs as **three concurrent processes**: Cowrie (Docker), the tailer, and
+the triage agent. You'll want three terminals open. Examples below show both
+Bash (macOS/Linux/WSL) and PowerShell (Windows) where they differ.
+
 ### Prerequisites
 
 - **Docker Desktop** (running)
@@ -68,20 +72,30 @@ which side writes which fields.
 ### One-time setup
 
 ```bash
-git clone <this repo>
-cd Honai
+git clone https://github.com/mpck4/HonAI.git
+cd HonAI
 
-# Agent deps
+# Install agent deps (Python tailer is stdlib-only — no install needed)
 pip install -r agents/requirements.txt
 
 # Fill in credentials
-cp agents/.env.example agents/.env
-# Edit agents/.env:
-#   DB_PATH=../sessions.db          (local-dev value; agents run from agents/)
-#   GROQ_API_KEY=gsk_...
-#   TELEGRAM_TOKEN=...
-#   TELEGRAM_CHAT_ID=...
+# Bash:        cp agents/.env.example agents/.env
+# PowerShell:  Copy-Item agents/.env.example agents/.env
 ```
+
+Edit `agents/.env` and fill in `GROQ_API_KEY`, `TELEGRAM_TOKEN`, and
+`TELEGRAM_CHAT_ID`. The default `DB_PATH=../sessions.db` works for local dev as-is.
+
+### Smoke test (no Docker / no creds needed)
+
+Before standing up Cowrie, confirm the tailer and schema work:
+
+```bash
+python -m ingest.tail --cowrie-log ingest/fixtures/sample_cowrie.json --once
+```
+
+Expected: `+2 inserted, +1 deduped` and a `sessions.db` file in the repo root.
+Delete `sessions.db` afterwards to start fresh for the real run.
 
 ### Run it (three terminals)
 
@@ -89,7 +103,15 @@ cp agents/.env.example agents/.env
 
 ```bash
 cd honeypot
+
+# Bash:
 mkdir -p var/log/cowrie var/lib/cowrie/downloads var/lib/cowrie/tty
+# PowerShell:
+mkdir var\log\cowrie, var\lib\cowrie\downloads, var\lib\cowrie\tty -Force
+
+# Linux/macOS only — Cowrie inside the container runs as UID 999:
+sudo chown -R 999:999 var
+
 docker compose up -d
 docker compose logs -f cowrie    # optional: watch attacks land
 ```
@@ -97,7 +119,8 @@ docker compose logs -f cowrie    # optional: watch attacks land
 **Terminal 2 — tailer (follow mode):**
 
 ```bash
-python -m ingest.tail --cowrie-log honeypot/var/log/cowrie/cowrie.json
+# Bash:        python -m ingest.tail --cowrie-log honeypot/var/log/cowrie/cowrie.json
+# PowerShell:  python -m ingest.tail --cowrie-log honeypot\var\log\cowrie\cowrie.json
 ```
 
 **Terminal 3 — triage agent:**
@@ -106,6 +129,8 @@ python -m ingest.tail --cowrie-log honeypot/var/log/cowrie/cowrie.json
 cd agents
 python triage.py
 ```
+
+Leave all three running. Closing any one of them pauses the pipeline.
 
 ### Verify end-to-end
 
@@ -140,8 +165,9 @@ summary, writes a row to `digests`, pushes to Telegram. Re-run on a cadence
 ### Tear down
 
 ```bash
-# Ctrl+C the Python processes
-cd honeypot && docker compose down
+# Ctrl+C the Python processes in terminals 2 and 3
+cd honeypot
+docker compose down
 ```
 
 ## Going public

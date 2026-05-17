@@ -26,3 +26,7 @@ Thumbs.db
 *.swo
 .idea/
 .vscode/
+
+# Claude Code internal state
+.claude/
+.mypy_cache/
