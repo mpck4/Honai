@@ -94,7 +94,10 @@ class SessionAccumulator:
             outfile = event.get("outfile", "")
             self.transcript_lines.append(f"[{clock}] download {url} -> {outfile}")
         elif eventid == "cowrie.session.closed":
-            duration = event.get("duration", 0.0)
+            try:
+                duration = float(event.get("duration", 0.0))
+            except (TypeError, ValueError):
+                duration = 0.0
             self.transcript_lines.append(f"[{clock}] session closed (duration={duration:.1f}s)")
 
 

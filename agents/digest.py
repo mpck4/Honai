@@ -17,6 +17,10 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from groq import Groq, RateLimitError
 
 from notify import send_digest_alert
