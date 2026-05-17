@@ -1,4 +1,4 @@
-# Honai
+# honai
 
 AI honeypot with agentic SOC analysis. A Cowrie SSH honeypot captures real
 attacker sessions on port 22, an LLM agent triages each session and assigns a
